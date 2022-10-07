@@ -15,26 +15,28 @@ namespace generate_flow_networks
         internal Network Network { get; set; }
         internal Node FromNode { get; set; }
         internal Node ToNode { get; set; }
-        internal double Cost { get; set; }
+        internal double Capacity { get; set; }
+        internal double Flow { get; set; }
 
-        internal Link(Network network, Node fromNode, Node toNode, double cost)
+        internal Link(Network network, Node fromNode, Node toNode, double capacity)
         {
             Network = network;
             FromNode = fromNode;
             ToNode = toNode;
-            Cost = cost;
+            Capacity = capacity;
+            Flow = 0;
             network.AddLink(this);
             fromNode.AddLink(this);
         }
 
-        public override string  ToString()
+        public override string ToString()
         {
-            return string.Format("{0} --> {1} ({2})", FromNode, ToNode, Cost);
+            return string.Format("{0} --> {1} ({2})", FromNode, ToNode, Capacity);
         }
 
         internal void Draw(Canvas canvas)
         {
-            canvas.DrawLine(FromNode.Center,ToNode.Center,Brushes.Green, 1);
+            canvas.DrawLine(FromNode.Center, ToNode.Center, Brushes.Green, 1);
         }
 
         // Draw a label along this link.
@@ -52,7 +54,7 @@ namespace generate_flow_networks
                 x - RADIUS, y - RADIUS,
                 DIAMETER, DIAMETER);
             canvas.DrawEllipse(rect, Brushes.White, null, 0);
-            canvas.DrawString(Cost.ToString(), DIAMETER, DIAMETER,
+            canvas.DrawString($"{Flow.ToString()}/{Capacity.ToString()}", DIAMETER, DIAMETER,
                 new Point(x, y), angle, 12, Brushes.Black);
         }
 

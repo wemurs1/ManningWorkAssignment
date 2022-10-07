@@ -1,16 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 using Microsoft.Win32;
 
@@ -65,7 +56,7 @@ namespace generate_flow_networks
             mainCanvas.Children.Clear();
 
             // Make the network draw itself.
-            MyNetwork.Draw(mainCanvas);
+            MyNetwork!.Draw(mainCanvas);
         }
 
         private void ExitCommand_Executed(object sender, RoutedEventArgs e)
@@ -127,13 +118,8 @@ namespace generate_flow_networks
         private void MakeRandomizedLink(Network network,
             Node node1, Node node2)
         {
-            double dist = Distance(node1.Center, node2.Center);
-
-            double cost12 = Math.Round(dist * Rand.Next(1.0, 1.2));
+            double cost12 = Rand.Next(1,5);
             Link link12 = new Link(network, node1, node2, cost12);
-
-            double cost21 = Math.Round(dist * Rand.Next(1.0, 1.2));
-            Link link21 = new Link(network, node2, node1, cost21);
         }
 
         // Return the distance between two points.
