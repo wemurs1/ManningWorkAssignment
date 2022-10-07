@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "generate_flow_networks/1.0.0": {
+        "runtime": {
+          "generate_flow_networks.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "generate_flow_networks/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
