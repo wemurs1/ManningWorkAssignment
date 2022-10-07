@@ -13,17 +13,19 @@ namespace find_flows
     internal class Link
     {
         internal Line? MyLine { get; set; }
+        internal Label? MyLabel { get; set; }
         internal Network Network { get; set; }
         internal Node FromNode { get; set; }
         internal Node ToNode { get; set; }
-        internal double Cost { get; set; }
+        internal double Capacity { get; set; }
+        internal double Flow { get; set; }
 
-        internal Link(Network network, Node fromNode, Node toNode, double cost)
+        internal Link(Network network, Node fromNode, Node toNode, double capacity)
         {
             Network = network;
             FromNode = fromNode;
             ToNode = toNode;
-            Cost = cost;
+            Capacity = capacity;
 
             Network.AddLink(this);
             FromNode.AddLink(this);
@@ -31,49 +33,21 @@ namespace find_flows
 
         public override string ToString()
         {
-            return string.Format("{0} --> {1} ({2})",
-                FromNode, ToNode, Cost);
+            return string.Format("{0} --> {1} ({2})", FromNode, ToNode, Capacity);
         }
 
-        private bool isInTree = false;
-        internal bool IsInTree
+        // Set the link's text, color, and thickness appropriately.
+        internal void SetLinkAppearance()
         {
-            get { return isInTree; }
-            set
-            {
-                isInTree = value;
-                SetLinkAppearance();
-            }
-        }
+            if (Flow > 0) MyLine!.Stroke = Brushes.Red;
+            else MyLine!.Stroke = Brushes.Black;
 
-        private bool isInPath = false;
-        internal bool IsInPath
-        {
-            get { return isInPath; }
-            set
-            {
-                isInPath = value;
-                SetLinkAppearance();
-            }
-        }
+            MyLine.StrokeThickness = 2 * Flow + 1;
 
-        // Set the node's color appropriately.
-        private void SetLinkAppearance()
-        {
-            if (isInPath)
+            if (MyLabel != null)
             {
-                MyLine!.Stroke = Brushes.Red;
-                MyLine.StrokeThickness = 6;
-            }
-            else if (isInTree)
-            {
-                MyLine!.Stroke = Brushes.Lime;
-                MyLine.StrokeThickness = 6;
-            }
-            else
-            {
-                MyLine!.Stroke = Brushes.Black;
-                MyLine.StrokeThickness = 1;
+                string text = string.Format("{0}/{1}", Flow, Capacity);
+                MyLabel.Content = text;
             }
         }
 
@@ -94,12 +68,12 @@ namespace find_flows
             double angle = (Math.Atan2(dy, dx) * 180 / Math.PI) - 0;
             double x = 0.67 * FromNode.Center.X + 0.33 * ToNode.Center.X;
             double y = 0.67 * FromNode.Center.Y + 0.33 * ToNode.Center.Y;
-            Rect rect = new Rect(
-                x - RADIUS, y - RADIUS,
-                DIAMETER, DIAMETER);
+
+            Rect rect = new Rect(x - RADIUS, y - RADIUS, DIAMETER, DIAMETER);
             canvas.DrawEllipse(rect, Brushes.White, null, 0);
-            canvas.DrawString(Cost.ToString(), DIAMETER, DIAMETER,
-                new Point(x, y), angle, 12, Brushes.Black);
+
+            string text = string.Format("{0}/{1}", Flow, Capacity);
+            MyLabel = canvas.DrawString(text, DIAMETER, DIAMETER, new Point(x, y), angle, 12, Brushes.Black);
         }
     }
 }

@@ -1,21 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Shapes;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace find_flows
 {
     internal class Network
     {
-        internal Node? StartNode = null;
-        internal Node? EndNode = null;
+        internal Node StartNode = null;
+        internal Node EndNode = null;
         internal List<Node> Nodes = new List<Node>();
         internal List<Link> Links = new List<Link>();
 
@@ -65,17 +62,16 @@ namespace find_flows
             sw.WriteLine("# Nodes.");
             foreach (Node node in Nodes)
             {
-                sw.WriteLine(string.Format("{0},{1},{2}",
-                    node.Center.X, node.Center.Y, node.Text));
+                sw.WriteLine(string.Format("{0},{1},{2}", node.Center.X, node.Center.Y, node.Text));
             }
             sw.WriteLine();
 
             // Save the links.
             sw.WriteLine("# Links.");
+
             foreach (Link link in Links)
             {
-                sw.WriteLine(string.Format("{0},{1},{2}",
-                    link.FromNode.Index, link.ToNode.Index, link.Cost));
+                sw.WriteLine(string.Format("{0},{1},{2}", link.FromNode.Index, link.ToNode.Index, link.Capacity));
             }
 
             return sw.ToString();
@@ -96,14 +92,14 @@ namespace find_flows
             using (StringReader reader = new StringReader(serialization))
             {
                 // Get the number of nodes and links.
-                int numNodes = int.Parse(ReadNextLine(reader)!);
-                int numLinks = int.Parse(ReadNextLine(reader)!);
+                int numNodes = int.Parse(ReadNextLine(reader));
+                int numLinks = int.Parse(ReadNextLine(reader));
 
                 // Read the nodes.
                 for (int i = 0; i < numNodes; i++)
                 {
                     // Read the next node's values.
-                    string[] fields = ReadNextLine(reader)!.Split(',');
+                    string[] fields = ReadNextLine(reader).Split(',');
                     double x = double.Parse(fields[0]);
                     double y = double.Parse(fields[1]);
                     string text = fields[2].Trim();
@@ -116,34 +112,36 @@ namespace find_flows
                 for (int i = 0; i < numLinks; i++)
                 {
                     // Read the next link's values.
-                    string[] fields = ReadNextLine(reader)!.Split(',');
+                    string[] fields = ReadNextLine(reader).Split(',');
                     int index1 = int.Parse(fields[0]);
                     int index2 = int.Parse(fields[1]);
-                    double cost = double.Parse(fields[2]);
+                    double capacity = double.Parse(fields[2]);
 
                     // Make the link. (This adds the link to the network.)
-                    Link link = new Link(this, Nodes[index1], Nodes[index2], cost);
+                    Link link = new Link(this, Nodes[index1], Nodes[index2], capacity);
                 }
             }
         }
 
         // Read the next non-blank line from the serialization.
-        private string? ReadNextLine(StringReader reader)
+        private string ReadNextLine(StringReader reader)
         {
             // Repeat until we get a line or reach the end.
-            string? line = reader.ReadLine();
-            while(line != null)
+            for (; ; )
             {
+                // Get the next line.
+                string line = reader.ReadLine();
+
+                // If we've reached the end of the stream, return null.
+                if (line == null) return null;
+
                 // Trim comments.
                 line = line.Split('#')[0];
                 line = line.Trim();
 
                 // If the line is non-blank, return it.
                 if (line.Length > 0) return line;
-                line = reader.ReadLine();
             }
-            // If we've reached the end of the stream, return null.
-            return null;
         }
 
         internal void ReadFromFile(string filename)
@@ -183,6 +181,7 @@ namespace find_flows
             double xmax = double.NegativeInfinity;
             double ymin = double.PositiveInfinity;
             double ymax = double.NegativeInfinity;
+
             foreach (Node node in Nodes)
             {
                 xmin = Math.Min(xmin, node.Center.X);
@@ -194,24 +193,28 @@ namespace find_flows
             // Make sure width and height are at least 1.
             double width = xmax - xmin;
             if (width < 1) width = 1;
+
             double height = ymax - ymin;
             if (height < 1) height = 1;
+
             return new Rect(xmin, ymin, width, height);
         }
 
         // Respond to node clicks.
         internal void ellipse_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            Ellipse? ellipse = sender as Ellipse;
-            Node? node = ellipse!.Tag as Node;
-            NodeClicked(node!, e);
+            Ellipse ellipse = sender as Ellipse;
+            Node node = ellipse.Tag as Node;
+            NodeClicked(node, e);
         }
+
         internal void label_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            Label? label = sender as Label;
-            Node? node = label!.Tag as Node;
-            NodeClicked(node!, e);
+            Label label = sender as Label;
+            Node node = label.Tag as Node;
+            NodeClicked(node, e);
         }
+
         private void NodeClicked(Node node, MouseButtonEventArgs e)
         {
             // Update the start/end node.
@@ -236,215 +239,152 @@ namespace find_flows
                 EndNode.IsEndNode = true;
             }
 
-            // Check for shortest paths.
-            CheckForPath();
+            //// Check for shortest paths.
+            //CheckForPath();
+
+            // Calculate maximal flows.
+            CalculateFlows();
         }
 
-        #region Shortest path routines
-
-        // Build the shortest path tree and the shortest path,
-        // depending on whether we have start and end nodes selected.
-        internal void CheckForPath()
+        // Find maximal flows.
+        private void CalculateFlows()
         {
-            // We have a start node. Build the shortest path tree.
-            if (StartNode != null)
-            {
-                switch (AlgorithmType)
-                {
-                    case AlgorithmTypes.LabelSetting:
-                        FindPathTreeLabelSetting();
-                        break;
-                    case AlgorithmTypes.LabelCorrecting:
-                        FindPathTreeLabelCorrecting();
-                        break;
-                }
+            // Make sure we have source and sink nodes.
+            if (StartNode == null) return;
+            if (EndNode == null) return;
 
-                // If we also have an end node, find the shortest path.
-                if (EndNode != null) FindPath();
-            }
-        }
-
-        // Build a shortest path tree rooted at the start node.
-        private void FindPathTreeLabelCorrecting()
-        {
-            // Reset all nodes and links.
+            // Calculate maximal flows.
+            // Prepare the links and nodes.
             foreach (Node node in Nodes)
             {
-                node.TotalCost = double.PositiveInfinity;
-                node.IsInPath = false;
-                node.ShortestPathLink = null;
-            }
-            foreach (Link link in Links)
-            {
-                link.IsInTree = false;
-                link.IsInPath = false;
-            }
-
-            // Place the start node on the candidate list.
-            StartNode!.TotalCost = 0;
-            List<Node> candidateList = new List<Node>();
-            candidateList.Add(StartNode);
-
-            // Process the candidate list until it is empty.
-            // See https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm.
-            int numPops = 0;
-            while (candidateList.Count > 0)
-            {
-                // Process the first item in the candidate list.
-                Node bestCandidate = candidateList[0];
-                candidateList.RemoveAt(0);
-                numPops++;
-
-                // Check this node's links.
-                foreach (Link link in bestCandidate.Links)
-                {
-                    // Get the node at the other end of this link.
-                    Node otherNode = link.ToNode;
-
-                    // See if we can improve the other node's total cost.
-                    double newTotalCost = bestCandidate.TotalCost + link.Cost;
-                    if (newTotalCost < otherNode.TotalCost)
-                    {
-                        otherNode.TotalCost = newTotalCost;
-                        otherNode.ShortestPathLink = link;
-
-                        // Add the other node to the candidate list.
-                        candidateList.Add(otherNode);
-                    }
-                }
-            }
-
-            // Print stats.
-            Console.WriteLine(string.Format("Pops: {0}", numPops));
-
-            // Set IsInTree for links in the shortest path tree.
-            foreach (Node node in Nodes)
-            {
-                if (node.ShortestPathLink != null)
-                    node.ShortestPathLink.IsInTree = true;
-            }
-        }
-
-        // Build a shortest path tree rooted at the start node.
-        private void FindPathTreeLabelSetting()
-        {
-            // Reset all nodes and links.
-            foreach (Node node in Nodes)
-            {
-                node.TotalCost = double.PositiveInfinity;
-                node.IsInPath = false;
-                node.ShortestPathLink = null;
                 node.Visited = false;
+                node.BackLinks = new List<Link>();
             }
+
             foreach (Link link in Links)
             {
-                link.IsInTree = false;
-                link.IsInPath = false;
+                link.ToNode.BackLinks.Add(link);
+                link.Flow = 0;
             }
 
-            // Place the start node on the candidate list.
-            StartNode!.TotalCost = 0;
-            List<Node> candidateList = new List<Node>();
-            candidateList.Add(StartNode);
-
-            // Process the candidate list until it is empty.
-            // See https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm.
-            int numPops = 0;
-            int numChecks = 0;
-            while (candidateList.Count > 0)
+            // Note that the BackLink lists contain the same
+            // objects used in the nodes' Links lists.
+            // That means if we update the flow on a link,
+            // it is updated for the BackLink and vice versa.
+            // Repeat until we can find no more improvements:
+            for (; ; )
             {
-                // Find the candidate with the smallest totalCost.
-                double bestTotalCost = double.PositiveInfinity;
-                int bestIndex = -1;
-                for (int index = 0; index < candidateList.Count; index++)
+                // Add the source node to the candidate list.
+                //...
+
+                // Repeat until the candidate list is empty:
+                while (candidateList.Count > 0)
                 {
-                    numChecks++;
-                    if (bestTotalCost > candidateList[index].TotalCost)
+                    // Get the next candidate.
+                    //...
+
+                    // See if we can add flow to the node's links.
+                    foreach (Link link in node.Links)
                     {
-                        bestTotalCost = candidateList[index].TotalCost;
-                        bestIndex = index;
+                        // See if we should add this neighbor to the candidate list.
+                        //...
+
+                        if (true) //...
+                        {
+                            // Add this neighbor to the candidate list.
+                            //...
+
+                            // Record the node and link that got to the neighbor.
+                            //...
+                        }
                     }
+
+                    // See if we can subtract flow from the node's back links.
+                    foreach (Link link in node.BackLinks)
+                    {
+                        //...
+                        if (true) //...
+                        {
+                            // Add this neighbor to the candidate list.
+                            //...
+
+                            // Record the node and link that got to the neighbor.
+                            //...
+                        }
+                    }
+
+                    // If we have reached the sink node, break out
+                    // of the while len(candidateList) > 0 loop.
+                    //...
                 }
 
-                // Process the best candidate.
-                Node bestCandidate = candidateList[bestIndex];
-                candidateList.RemoveAt(bestIndex);
-                bestCandidate.Visited = true;
-                numPops++;
+                // If we didn't visit the sink, then we didn't find
+                // an augmenting path so break out of the for(;;) loop.
+                //...
 
-                // Check this node's links.
-                foreach (Link link in bestCandidate.Links)
+                // Work back through the augmenting path updating the link flows.
+                // First find the smallest unused capacity on the augmenting path.
+                //...
+
+                while (test_node != StartNode)
                 {
-                    // Get the node at the other end of this link.
-                    Node otherNode = link.ToNode;
-                    if (otherNode.Visited) continue;
+                    // Get the link that got us to this node.
+                    //...
 
-                    // See if we can improve the other node's totalCost.
-                    double newTotalCost = bestCandidate.TotalCost + link.Cost;
-                    if (newTotalCost < otherNode.TotalCost)
-                    {
-                        otherNode.TotalCost = newTotalCost;
-                        otherNode.ShortestPathLink = link;
+                    // See if this link was used as a normal link or a backlink.
+                    //...
 
-                        // Add the other node to the candidate list.
-                        candidateList.Add(otherNode);
-                    }
+                    if (true) //...
+                              // Normal link.
+                        unused_capacity = 1; //...
+                    else
+                        // Backlink.
+                        unused_capacity = 1; //...
+
+                    if (smallest_capacity > unused_capacity)
+                        smallest_capacity = unused_capacity;
+
+                    // Go to the previous node in the path.
+                    //...
                 }
+
+                // To update the augmenting path, follow the path
+                // again, this time updating the flows.
+                //...
+
+                while (test_node != StartNode)
+                {
+                    // Get the link that got us to this node.
+                    //...
+
+                    // See if this link was used as a
+                    // normal link or a reverse link.
+                    if (true) //...
+                              // Normal link.
+                        link.Flow += smallest_capacity;
+                    else
+                        // Backlink.
+                        link.Flow -= smallest_capacity;
+
+                    // Go to the previous node in the path.
+                    //...
+                }
+
+                // Reset the nodes' visited flags for the
+                // next attempt at finding an augmenting path.
+                foreach (Node node in Nodes) node.Visited = false;
             }
 
-            // Print stats.
-            Console.WriteLine(string.Format("Checks: {0}", numChecks));
-            Console.WriteLine(string.Format("Pops:   {0}", numPops));
+            // We're done. The total flow equals the
+            // total flow out of the source. (Or into the sink.)
+            double flow = 0;
 
-            // Set IsInTree for links in the shortest path tree.
-            foreach (Node node in Nodes)
-            {
-                if (node.ShortestPathLink != null)
-                    node.ShortestPathLink.IsInTree = true;
-            }
+            foreach (Link link in StartNode.Links) flow += link.Flow;
+
+            Console.WriteLine(string.Format("Total flow: {0}", flow));
+
+            // Update the link colors and thicnesses.
+            foreach (Link link in Links) link.SetLinkAppearance();
         }
-
-        private void FindPath()
-        {
-            // If there is no path between the start and end nodes, return.
-            if (EndNode!.ShortestPathLink == null) return;
-
-            // Follow the path backwards from the end node to the start node.
-            Node node = EndNode;
-            while (node != StartNode)
-            {
-                // Mark this node's shortest path link.
-                node.ShortestPathLink!.IsInPath = true;
-                node = node.ShortestPathLink.FromNode;
-            }
-            Console.WriteLine(string.Format("Total cost: {0}", EndNode.TotalCost));
-        }
-
-        #endregion Shortest path routines
-
-        // Determine which algorithm to use.
-        internal enum AlgorithmTypes
-        {
-            LabelSetting,
-            LabelCorrecting,
-        }
-        private AlgorithmTypes algorithmType = AlgorithmTypes.LabelSetting;
-        internal AlgorithmTypes AlgorithmType
-        {
-            get
-            {
-                return algorithmType;
-            }
-            set
-            {
-                // Save the new value.
-                algorithmType = value;
-
-                // Use the newly selected algorithm to
-                // check for a tree and path.
-                CheckForPath();
-            }
-        }
-
     }
 }
