@@ -1,0 +1,21 @@
+# Employees
+E1;Alice;turn signal fluid,cable stretcher,starter fluid
+E2;Ben;frequency grease,cable stretcher,tartan paint,friction loss paste,radiator belt
+E3;Cindy;cable stretcher,tartan paint
+E4;Dan;cable stretcher,turn signal fluid,metric crescent wrench
+E5;Emma;radiator belt,turn signal fluid,tartan paint,left-handed screwdriver
+E6;Frank;cable stretcher,tartan paint,metric crescent wrench,friction loss paste,snipe oil,cable stretcher
+E7;Gina;radiator belt,tartan paint,left-handed screwdriver,frequency grease
+E8;Hank;tartan paint,deisel spark plugs,cable stretcher,radiator belt
+
+# Jobs
+J1;Fix hyperdrive;turn signal fluid
+J2;Boost transporter range;left-handed screwdriver
+J3;Deanodize banana;tartan paint,left-handed screwdriver
+J4;Calibrate hovercart;left-handed screwdriver
+J5;Deionize point-of-view ray;starter fluid
+J6;Finish lightsaber colorimetry;snipe oil,cable stretcher
+J7;Clean sonic handguns;metric crescent wrench,friction loss paste
+J8;Re-tension acceleration couches;cable stretcher
+J9;Debug backswimmer;frequency grease,radiator belt
+J10;Clean perambulator mediatron;friction loss paste
