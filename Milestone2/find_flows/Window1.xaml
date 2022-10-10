@@ -3,35 +3,24 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="find_flows"
     Height="400" Width="400">
-    <Window.CommandBindings>
-        <CommandBinding Command="Open" CanExecute="OpenCommand_CanExecute" Executed="OpenCommand_Executed" />
-    </Window.CommandBindings>
-    <DockPanel>
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Command="Open" />
-                <MenuItem Header="_Make Test Networks" Click="makeTestNetworks_Click" />
-                <Separator />
-                <MenuItem Header="_Exit" Click="ExitCommand_Executed" />
-            </MenuItem>
-        </Menu>
-        
-        <ToolBar DockPanel.Dock="Top">
-            <Label Content="Algorithm:"/>
-            <ComboBox Name="algorithmComboBox"
-                SelectedIndex="0" Width="120"
-                SelectionChanged="algorithmComboBox_SelectionChanged">
-                <ComboBoxItem Content="Label Setting" />
-                <ComboBoxItem Content="Label Correcting" />
-            </ComboBox>
-        </ToolBar>
-        
-        <Border BorderBrush="Black" BorderThickness="1" Margin="3">
-            <ScrollViewer
-                HorizontalScrollBarVisibility="Auto"
-                VerticalScrollBarVisibility="Auto">
-                <Canvas Name="mainCanvas"/>
-            </ScrollViewer>
-        </Border>
+    <Window.CommandBindings>
+        <CommandBinding Command="Open" CanExecute="OpenCommand_CanExecute" Executed="OpenCommand_Executed" />
+    </Window.CommandBindings>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Command="Open" />
+                <Separator />
+                <MenuItem Header="_Exit" Click="ExitCommand_Executed" />
+            </MenuItem>
+        </Menu>
+
+        <Border BorderBrush="Black" BorderThickness="1" Margin="3">
+            <ScrollViewer
+                HorizontalScrollBarVisibility="Auto"
+                VerticalScrollBarVisibility="Auto">
+                <Canvas Name="mainCanvas"/>
+            </ScrollViewer>
+        </Border>
     </DockPanel>
 </Window>

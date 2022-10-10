@@ -72,26 +72,5 @@ namespace find_flows
         {
             Close();
         }
-
-        private void makeTestNetworks_Click(object sender, RoutedEventArgs e)
-        {
-            BuildGridNetwork("3x3_grid.net", 300, 300, 3, 3);
-            BuildGridNetwork("4x4_grid.net", 300, 300, 4, 4);
-            BuildGridNetwork("5x8_grid.net", 600, 400, 5, 8);
-            BuildGridNetwork("6x10_grid.net", 600, 400, 6, 10);
-            BuildGridNetwork("10x15_grid.net", 600, 400, 10, 15);
-            BuildGridNetwork("20x30_grid.net", 600, 400, 20, 30);
-            MessageBox.Show("Done");
-        }
-
-        // Set the network's shortest path algorithm.
-        private void algorithmComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            ComboBoxItem? item = algorithmComboBox.SelectedItem as ComboBoxItem;
-            if (item!.Content.ToString() == "Label Setting")
-                MyNetwork.AlgorithmType = Network.AlgorithmTypes.LabelSetting;
-            else if (item.Content.ToString() == "Label Correcting")
-                MyNetwork.AlgorithmType = Network.AlgorithmTypes.LabelCorrecting;
-        }
     }
 }

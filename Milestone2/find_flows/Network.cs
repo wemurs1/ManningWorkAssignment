@@ -11,8 +11,8 @@ namespace find_flows
 {
     internal class Network
     {
-        internal Node StartNode = null;
-        internal Node EndNode = null;
+        internal Node? StartNode = null;
+        internal Node? EndNode = null;
         internal List<Node> Nodes = new List<Node>();
         internal List<Link> Links = new List<Link>();
 
@@ -92,14 +92,14 @@ namespace find_flows
             using (StringReader reader = new StringReader(serialization))
             {
                 // Get the number of nodes and links.
-                int numNodes = int.Parse(ReadNextLine(reader));
-                int numLinks = int.Parse(ReadNextLine(reader));
+                int numNodes = int.Parse(ReadNextLine(reader)!);
+                int numLinks = int.Parse(ReadNextLine(reader)!);
 
                 // Read the nodes.
                 for (int i = 0; i < numNodes; i++)
                 {
                     // Read the next node's values.
-                    string[] fields = ReadNextLine(reader).Split(',');
+                    string[] fields = ReadNextLine(reader)!.Split(',');
                     double x = double.Parse(fields[0]);
                     double y = double.Parse(fields[1]);
                     string text = fields[2].Trim();
@@ -112,7 +112,7 @@ namespace find_flows
                 for (int i = 0; i < numLinks; i++)
                 {
                     // Read the next link's values.
-                    string[] fields = ReadNextLine(reader).Split(',');
+                    string[] fields = ReadNextLine(reader)!.Split(',');
                     int index1 = int.Parse(fields[0]);
                     int index2 = int.Parse(fields[1]);
                     double capacity = double.Parse(fields[2]);
@@ -124,17 +124,12 @@ namespace find_flows
         }
 
         // Read the next non-blank line from the serialization.
-        private string ReadNextLine(StringReader reader)
+        private string? ReadNextLine(StringReader reader)
         {
             // Repeat until we get a line or reach the end.
-            for (; ; )
+            string? line;
+            while ((line = reader.ReadLine()) != null)
             {
-                // Get the next line.
-                string line = reader.ReadLine();
-
-                // If we've reached the end of the stream, return null.
-                if (line == null) return null;
-
                 // Trim comments.
                 line = line.Split('#')[0];
                 line = line.Trim();
@@ -142,6 +137,9 @@ namespace find_flows
                 // If the line is non-blank, return it.
                 if (line.Length > 0) return line;
             }
+
+            // If we've reached the end of the stream, return null.
+            return null;
         }
 
         internal void ReadFromFile(string filename)
@@ -203,16 +201,16 @@ namespace find_flows
         // Respond to node clicks.
         internal void ellipse_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            Ellipse ellipse = sender as Ellipse;
-            Node node = ellipse.Tag as Node;
-            NodeClicked(node, e);
+            Ellipse? ellipse = sender as Ellipse;
+            Node? node = ellipse!.Tag as Node;
+            NodeClicked(node!, e);
         }
 
         internal void label_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            Label label = sender as Label;
-            Node node = label.Tag as Node;
-            NodeClicked(node, e);
+            Label? label = sender as Label;
+            Node? node = label!.Tag as Node;
+            NodeClicked(node!, e);
         }
 
         private void NodeClicked(Node node, MouseButtonEventArgs e)
@@ -247,6 +245,7 @@ namespace find_flows
         }
 
         // Find maximal flows.
+        // Find maximal flows.
         private void CalculateFlows()
         {
             // Make sure we have source and sink nodes.
@@ -254,13 +253,13 @@ namespace find_flows
             if (EndNode == null) return;
 
             // Calculate maximal flows.
+
             // Prepare the links and nodes.
             foreach (Node node in Nodes)
             {
                 node.Visited = false;
                 node.BackLinks = new List<Link>();
             }
-
             foreach (Link link in Links)
             {
                 link.ToNode.BackLinks.Add(link);
@@ -271,103 +270,107 @@ namespace find_flows
             // objects used in the nodes' Links lists.
             // That means if we update the flow on a link,
             // it is updated for the BackLink and vice versa.
+
             // Repeat until we can find no more improvements:
             for (; ; )
             {
                 // Add the source node to the candidate list.
-                //...
+                List<Node> candidateList = new List<Node>();
+                candidateList.Add(StartNode);
+                StartNode.Visited = true;
 
                 // Repeat until the candidate list is empty:
                 while (candidateList.Count > 0)
                 {
                     // Get the next candidate.
-                    //...
+                    Node node = candidateList[0];
+                    candidateList.RemoveAt(0);
 
                     // See if we can add flow to the node's links.
                     foreach (Link link in node.Links)
                     {
                         // See if we should add this neighbor to the candidate list.
-                        //...
-
-                        if (true) //...
+                        Node neighbor = link.ToNode;
+                        if ((!neighbor.Visited) && (link.Flow < link.Capacity))
                         {
                             // Add this neighbor to the candidate list.
-                            //...
+                            candidateList.Add(neighbor);
+                            neighbor.Visited = true;
 
                             // Record the node and link that got to the neighbor.
-                            //...
+                            neighbor.FromNode = node;
+                            neighbor.FromLink = link;
                         }
                     }
 
                     // See if we can subtract flow from the node's back links.
                     foreach (Link link in node.BackLinks)
                     {
-                        //...
-                        if (true) //...
+                        Node neighbor = link.FromNode;
+                        if ((!neighbor.Visited) && (link.Flow > 0))
                         {
                             // Add this neighbor to the candidate list.
-                            //...
+                            candidateList.Add(neighbor);
+                            neighbor.Visited = true;
 
                             // Record the node and link that got to the neighbor.
-                            //...
+                            neighbor.FromNode = node;
+                            neighbor.FromLink = link;
                         }
                     }
 
                     // If we have reached the sink node, break out
                     // of the while len(candidateList) > 0 loop.
-                    //...
+                    if (EndNode.Visited) break;
                 }
 
                 // If we didn't visit the sink, then we didn't find
                 // an augmenting path so break out of the for(;;) loop.
-                //...
+                if (!EndNode.Visited) break;
 
                 // Work back through the augmenting path updating the link flows.
                 // First find the smallest unused capacity on the augmenting path.
-                //...
-
+                double smallest_capacity = double.PositiveInfinity;
+                Node test_node = EndNode;
                 while (test_node != StartNode)
                 {
                     // Get the link that got us to this node.
-                    //...
+                    Link link = test_node.FromLink;
 
                     // See if this link was used as a normal link or a backlink.
-                    //...
-
-                    if (true) //...
-                              // Normal link.
-                        unused_capacity = 1; //...
+                    double unused_capacity;
+                    if (link.ToNode == test_node)
+                        // Normal link.
+                        unused_capacity = link.Capacity - link.Flow;
                     else
                         // Backlink.
-                        unused_capacity = 1; //...
-
+                        unused_capacity = link.Flow;
                     if (smallest_capacity > unused_capacity)
                         smallest_capacity = unused_capacity;
 
                     // Go to the previous node in the path.
-                    //...
+                    test_node = test_node.FromNode;
                 }
 
                 // To update the augmenting path, follow the path
                 // again, this time updating the flows.
-                //...
-
+                test_node = EndNode;
                 while (test_node != StartNode)
                 {
                     // Get the link that got us to this node.
-                    //...
+                    Link link = test_node.FromLink;
 
                     // See if this link was used as a
                     // normal link or a reverse link.
-                    if (true) //...
-                              // Normal link.
+                    if (link.ToNode == test_node)
+                        // Normal link.
                         link.Flow += smallest_capacity;
                     else
                         // Backlink.
                         link.Flow -= smallest_capacity;
 
                     // Go to the previous node in the path.
-                    //...
+                    test_node = test_node.FromNode;
                 }
 
                 // Reset the nodes' visited flags for the
@@ -378,9 +381,7 @@ namespace find_flows
             // We're done. The total flow equals the
             // total flow out of the source. (Or into the sink.)
             double flow = 0;
-
             foreach (Link link in StartNode.Links) flow += link.Flow;
-
             Console.WriteLine(string.Format("Total flow: {0}", flow));
 
             // Update the link colors and thicnesses.
