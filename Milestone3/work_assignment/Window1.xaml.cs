@@ -47,7 +47,7 @@ namespace work_assignment
                 {
                     // Open the network.
                     MyNetwork = new Network();
-                    MyNetwork.LoadJobsFile(dialog.FileName);
+                    MyNetwork.LoadJobsFile(dialog.FileName, mainCanvas);
                 }
             }
             catch (Exception ex)
@@ -57,7 +57,7 @@ namespace work_assignment
             }
 
             // Display the network.
-            DrawNetwork();
+            // DrawNetwork();
         }
 
         private void DrawNetwork()

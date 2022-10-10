@@ -15,8 +15,7 @@ namespace work_assignment
         internal Node? EndNode = null;
         internal List<Node> Nodes = new List<Node>();
         internal List<Link> Links = new List<Link>();
-        internal List<Node> Employees = new List<Node>();
-        internal List<Node> Jobs = new List<Node>();
+        private Canvas? theCanvas = null;
 
         internal Network()
         {
@@ -35,8 +34,6 @@ namespace work_assignment
             EndNode = null;
             Nodes = new List<Node>();
             Links = new List<Link>();
-            Employees = new List<Node>();
-            Jobs = new List<Node>();
         }
 
         internal void AddNode(Node node)
@@ -164,12 +161,12 @@ namespace work_assignment
             foreach (Link link in Links) link.Draw(canvas);
 
             // See if we should draw labels.
-            bool drawLabels = false;
+            bool drawLabels = true;
 
             // Label the links.
-            if (drawLabels)
-                foreach (Link link in Links)
-                    link.DrawLabel(canvas);
+            //if (drawLabels)
+            //  foreach (Link link in Links)
+            //    link.DrawLabel(canvas);
 
             // Draw and label the nodes.
             foreach (Node node in Nodes) node.Draw(canvas, drawLabels);
@@ -392,14 +389,18 @@ namespace work_assignment
             foreach (Link link in Links) link.SetLinkAppearance();
         }
 
-        internal void LoadJobsFile(string filename)
+        internal void LoadJobsFile(string filename, Canvas canvas)
         {
+            theCanvas = canvas;
             JobsBuilder(File.ReadAllText(filename));
         }
 
         internal void JobsBuilder(string serialization)
         {
             Clear();
+
+            List<Node> employees = new List<Node>();
+            List<Node> jobs = new List<Node>();
 
             // Get a stream to read the serialization one line at a time.
             using (StringReader reader = new StringReader(serialization))
@@ -408,22 +409,126 @@ namespace work_assignment
                 while ((line = ReadNextLine(reader)) != null)
                 {
                     string[] fields = line.Split(';');
+                    string nodeName = fields[0].Trim();
+                    string fullName = fields[1].Trim();
                     string[] skillsTools = fields[2].Split(',', StringSplitOptions.RemoveEmptyEntries);
-                    Node node = new Node(this, new Point(), fields[0], fields[1], skillsTools);
+                    Node node = new Node(this, new Point(), nodeName, fullName, skillsTools);
                     var type = fields[0].Substring(0, 1).ToUpper();
                     if (type == "E")
                     {
-                        Employees.Add(node);
+                        employees.Add(node);
                     }
                     else if (type == "J")
                     {
-                        Jobs.Add(node);
+                        jobs.Add(node);
                     }
                     else
                     {
                         throw new ArgumentException($"Unknown record type {type}: record {line}");
                     }
                 }
+            }
+
+            // Arrange the nodes.
+            double margin = 20;
+            double xspace = 100;
+            double yspace = 50;
+            int num_rows = Math.Max(employees.Count, jobs.Count);
+            double x = margin + xspace;
+            double y = margin + yspace * (num_rows - employees.Count()) / 2;
+            foreach (Node node in employees)
+            {
+                node.Center = new Point(x, y);
+                y += yspace;
+            }
+            x += xspace;
+            y = margin + yspace * (num_rows - jobs.Count) / 2;
+            foreach (Node node in jobs)
+            {
+                node.Center = new Point(x, y);
+                y += yspace;
+            }
+
+            // Make the source and sink nodes.
+            x = margin;
+            y = margin + yspace * (num_rows - 1) / 2;
+            Node start_node = new Node(this,
+                new Point(x, y), "S", "Start", new string[] { });
+
+            x += 3 * xspace;
+            Node end_node = new Node(this,
+                new Point(x, y), "E", "End", new string[] { });
+
+            // Link the start node to the employees.
+            foreach (Node node in employees)
+            {
+                new Link(this, start_node, node, 1);
+            }
+
+            // Link the jobs to the end node.
+            foreach (Node node in jobs)
+            {
+                new Link(this, node, end_node, 1);
+            }
+
+            // Link employees to jobs that they can work.
+            foreach (Node employee in employees)
+            {
+                foreach (Node job in jobs)
+                {
+                    // This employee can work this job if the jobs's tools
+                    // are a subset of the tools that the employee has.
+                    bool can_work = job.Tools.IsSubsetOf(employee.Tools);
+                    if (can_work)
+                        new Link(this, employee, job, 1);
+                }
+            }
+
+            // Draw the network.
+            // (We must do this before setting IsStartNode or
+            // IsEndNode because those change the node colors
+            // and therefore we need to create the node
+            // ellipses and labels first.)
+            Draw(theCanvas!);
+
+            // Set the network's start and end nodes.
+            StartNode = start_node;
+            StartNode.IsStartNode = true;
+            EndNode = end_node;
+            EndNode.IsEndNode = true;
+
+            // Find the maximal flows.
+            CalculateFlows();
+
+            // Display employee assignments.
+            Console.WriteLine("\nEmployee assignments:");
+            foreach (Node employee in employees)
+            {
+                // Find this employee's assignment link.
+                Link? assigned_link = null;
+                foreach (Link link in employee.Links)
+                {
+                    if (link.Flow > 0)
+                    {
+                        assigned_link = link;
+                        break;
+                    }
+                }
+                if (assigned_link == null)
+                    Console.WriteLine(string.Format("{0,-2} {1,-5}     takes a break",
+                         employee.Text, employee.FullName));
+                else
+                    Console.WriteLine(string.Format("{0,-2} {1,-5} --> {2,-2} {3}",
+                         employee.Text, employee.FullName,
+                         assigned_link.ToNode.Text, assigned_link.ToNode.FullName));
+            }
+
+            // Display unassigned jobs.
+            Console.WriteLine("\nUnassigned jobs:");
+            foreach (Node job in jobs)
+            {
+                if (job.Links[0].Flow == 0)
+                    Console.WriteLine(string.Format("{0,-2} {1}", job.Text, job.FullName));
             }
         }
     }
