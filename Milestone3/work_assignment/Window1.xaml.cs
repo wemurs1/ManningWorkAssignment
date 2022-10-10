@@ -38,15 +38,16 @@ namespace work_assignment
             try
             {
                 OpenFileDialog dialog = new OpenFileDialog();
-                dialog.DefaultExt = ".net";
-                dialog.Filter = "Network Files|*.net|All Files|*.*";
+                dialog.DefaultExt = ".jobs";
+                dialog.Filter = "Jobs Files|*.jobs|All Files|*.*";
 
                 // Display the dialog.
                 bool? result = dialog.ShowDialog();
                 if (result == true)
                 {
                     // Open the network.
-                    MyNetwork = new Network(dialog.FileName);
+                    MyNetwork = new Network();
+                    MyNetwork.LoadJobsFile(dialog.FileName);
                 }
             }
             catch (Exception ex)

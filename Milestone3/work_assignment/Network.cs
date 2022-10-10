@@ -15,6 +15,8 @@ namespace work_assignment
         internal Node? EndNode = null;
         internal List<Node> Nodes = new List<Node>();
         internal List<Link> Links = new List<Link>();
+        internal List<Node> Employees = new List<Node>();
+        internal List<Node> Jobs = new List<Node>();
 
         internal Network()
         {
@@ -33,6 +35,8 @@ namespace work_assignment
             EndNode = null;
             Nodes = new List<Node>();
             Links = new List<Link>();
+            Employees = new List<Node>();
+            Jobs = new List<Node>();
         }
 
         internal void AddNode(Node node)
@@ -105,7 +109,8 @@ namespace work_assignment
                     string text = fields[2].Trim();
 
                     // Make the node. (This adds the node to the network.)
-                    Node node = new Node(this, new Point(x, y), text);
+                    string[]? skills = null;
+                    Node node = new Node(this, new Point(x, y), text, "", skills);
                 }
 
                 // Read the links.
@@ -159,7 +164,7 @@ namespace work_assignment
             foreach (Link link in Links) link.Draw(canvas);
 
             // See if we should draw labels.
-            bool drawLabels = (Nodes.Count < 100);
+            bool drawLabels = false;
 
             // Label the links.
             if (drawLabels)
@@ -245,7 +250,6 @@ namespace work_assignment
         }
 
         // Find maximal flows.
-        // Find maximal flows.
         private void CalculateFlows()
         {
             // Make sure we have source and sink nodes.
@@ -262,7 +266,7 @@ namespace work_assignment
             }
             foreach (Link link in Links)
             {
-                link.ToNode.BackLinks.Add(link);
+                link.ToNode.BackLinks!.Add(link);
                 link.Flow = 0;
             }
 
@@ -304,7 +308,7 @@ namespace work_assignment
                     }
 
                     // See if we can subtract flow from the node's back links.
-                    foreach (Link link in node.BackLinks)
+                    foreach (Link link in node.BackLinks!)
                     {
                         Node neighbor = link.FromNode;
                         if ((!neighbor.Visited) && (link.Flow > 0))
@@ -335,7 +339,7 @@ namespace work_assignment
                 while (test_node != StartNode)
                 {
                     // Get the link that got us to this node.
-                    Link link = test_node.FromLink;
+                    Link link = test_node.FromLink!;
 
                     // See if this link was used as a normal link or a backlink.
                     double unused_capacity;
@@ -349,7 +353,7 @@ namespace work_assignment
                         smallest_capacity = unused_capacity;
 
                     // Go to the previous node in the path.
-                    test_node = test_node.FromNode;
+                    test_node = test_node.FromNode!;
                 }
 
                 // To update the augmenting path, follow the path
@@ -358,7 +362,7 @@ namespace work_assignment
                 while (test_node != StartNode)
                 {
                     // Get the link that got us to this node.
-                    Link link = test_node.FromLink;
+                    Link link = test_node.FromLink!;
 
                     // See if this link was used as a
                     // normal link or a reverse link.
@@ -370,7 +374,7 @@ namespace work_assignment
                         link.Flow -= smallest_capacity;
 
                     // Go to the previous node in the path.
-                    test_node = test_node.FromNode;
+                    test_node = test_node.FromNode!;
                 }
 
                 // Reset the nodes' visited flags for the
@@ -386,6 +390,41 @@ namespace work_assignment
 
             // Update the link colors and thicnesses.
             foreach (Link link in Links) link.SetLinkAppearance();
+        }
+
+        internal void LoadJobsFile(string filename)
+        {
+            JobsBuilder(File.ReadAllText(filename));
+        }
+
+        internal void JobsBuilder(string serialization)
+        {
+            Clear();
+
+            // Get a stream to read the serialization one line at a time.
+            using (StringReader reader = new StringReader(serialization))
+            {
+                string? line;
+                while ((line = ReadNextLine(reader)) != null)
+                {
+                    string[] fields = line.Split(';');
+                    string[] skillsTools = fields[2].Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    Node node = new Node(this, new Point(), fields[0], fields[1], skillsTools);
+                    var type = fields[0].Substring(0, 1).ToUpper();
+                    if (type == "E")
+                    {
+                        Employees.Add(node);
+                    }
+                    else if (type == "J")
+                    {
+                        Jobs.Add(node);
+                    }
+                    else
+                    {
+                        throw new ArgumentException($"Unknown record type {type}: record {line}");
+                    }
+                }
+            }
         }
     }
 }

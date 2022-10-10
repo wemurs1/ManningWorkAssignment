@@ -34,7 +34,7 @@ namespace work_assignment
                 {
                     double x = MARGIN + c * colWid;
                     double y = MARGIN + r * rowHgt;
-                    nodes[r, c] = new Node(network, new Point(x, y), index.ToString());
+                    nodes[r, c] = new Node(network, new Point(x, y), index.ToString(), "",null);
                     index++;
                 }
             }

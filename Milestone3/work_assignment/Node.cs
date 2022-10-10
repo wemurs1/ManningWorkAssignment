@@ -19,14 +19,18 @@ namespace work_assignment
         internal bool IsInPath { get; set; }
         internal Link? ShortestPathLink { get; set; }
         internal bool Visited { get; set; }
-        internal List<Link> BackLinks { get; set; }
-        internal Node FromNode { get; set; }
-        internal Link FromLink { get; set; }
-        internal Node(Network network, Point center, string text)
+        internal List<Link>? BackLinks { get; set; }
+        internal Node? FromNode { get; set; }
+        internal Link? FromLink { get; set; }
+        internal string FullName { get; set; }
+        internal HashSet<string> Tools { get; set; }
+        internal Node(Network network, Point center, string text, string fullName, string[]? tools)
         {
             Network = network;
             Center = center;
             Text = text;
+            FullName = fullName;
+            Tools = (tools != null) ? new(tools) : null;
             Index = -1;
 
             Network.AddNode(this);
@@ -68,19 +72,19 @@ namespace work_assignment
         {
             if (IsStartNode)
             {
-                MyEllipse.Fill = Brushes.Pink;
+                MyEllipse!.Fill = Brushes.Pink;
                 MyEllipse.Stroke = Brushes.Red;
                 MyEllipse.StrokeThickness = 2;
             }
             else if (IsEndNode)
             {
-                MyEllipse.Fill = Brushes.LightGreen;
+                MyEllipse!.Fill = Brushes.LightGreen;
                 MyEllipse.Stroke = Brushes.Green;
                 MyEllipse.StrokeThickness = 2;
             }
             else
             {
-                MyEllipse.Fill = Brushes.White;
+                MyEllipse!.Fill = Brushes.White;
                 MyEllipse.Stroke = Brushes.Black;
                 MyEllipse.StrokeThickness = 1;
             }
